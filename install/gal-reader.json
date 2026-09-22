@@ -2,7 +2,7 @@
   "id": "cb2c41d7-1719-498c-ab94-73fdb0b7cc67",
   "scriptName": "狐九汐 · gal沉浸阅读",
   "findRegex": "/<gal\\b[^>]*>[\\s\\S]*?<\\/gal>/gi",
-  "replaceString": "\n\n```html\n<body><script>\n$('body').load('https://testingcf.jsdelivr.net/gh/hakoiri-na/hujiuxi-reader@82d9bc4/dist/狐九汐/界面/沉浸阅读/index.html');\n</script></body>\n```\n\n",
+  "replaceString": "\n\n```html\n<body><script>\n$('body').load('https://testingcf.jsdelivr.net/gh/hakoiri-na/hujiuxi-reader@2d98f5f/dist/狐九汐/界面/沉浸阅读/index.html');\n</script></body>\n```\n\n",
   "trimStrings": [],
   "placement": [2],
   "disabled": false,
