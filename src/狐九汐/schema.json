@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "世界": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "日期": {
+          "default": "待初始化",
+          "type": "string"
+        },
+        "曜日": {
+          "default": "待初始化",
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "月",
+                "火",
+                "水",
+                "木",
+                "金",
+                "土",
+                "日"
+              ]
+            },
+            {
+              "type": "string",
+              "const": "待初始化"
+            }
+          ]
+        },
+        "时间": {
+          "default": "待初始化",
+          "type": "string"
+        }
+      }
+    },
+    "狐九汐": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "缘结值": {
+          "default": 0,
+          "type": "number"
+        },
+        "心情": {
+          "default": "待初始化",
+          "type": "string"
+        },
+        "心声": {
+          "default": "待初始化",
+          "type": "string"
+        },
+        "小钱袋": {
+          "default": 32000,
+          "type": "number"
+        },
+        "购物日志": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "着装": {
+          "default": "待初始化",
+          "type": "string"
+        }
+      }
+    },
+    "御神签": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "default": {},
+        "type": "object",
+        "properties": {
+          "番号": {
+            "default": "",
+            "type": "string"
+          },
+          "运势": {
+            "default": "",
+            "type": "string"
+          },
+          "寄语": {
+            "default": "",
+            "type": "string"
+          },
+          "解签": {
+            "default": "",
+            "type": "string"
+          },
+          "个别运势": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "愿望": {
+                "default": "",
+                "type": "string"
+              },
+              "待人": {
+                "default": "",
+                "type": "string"
+              },
+              "恋爱": {
+                "default": "",
+                "type": "string"
+              },
+              "健康": {
+                "default": "",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
