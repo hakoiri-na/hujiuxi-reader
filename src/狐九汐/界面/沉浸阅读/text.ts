@@ -1,6 +1,7 @@
 export type Token =
   | { kind: 'text'; text: string }
   | { kind: 'term'; text: string; note: string }
+  | { kind: 'quote'; children: Token[] }
   | { kind: 'dialogue'; ja: Token[]; zh: Token[] };
 export function extractStory(message: string): string {
   return [...message.matchAll(/<gal\b[^>]*>([\s\S]*?)<\/gal>/gi)]
@@ -29,7 +30,7 @@ export function tokenize(text: string, dialogue = true): Token[] {
           ja: tokenize(chars.slice(0, split).join(''), false),
           zh: tokenize(chars.slice(split + 1).join(''), false),
         });
-      } else tokens.push({ kind: 'text', text: match[0] });
+      } else tokens.push({ kind: 'quote', children: tokenize(match[1], false) });
     } else tokens.push({ kind: 'term', text: match[dialogue ? 2 : 1], note: match[dialogue ? 3 : 2] });
     last = match.index! + match[0].length;
   }

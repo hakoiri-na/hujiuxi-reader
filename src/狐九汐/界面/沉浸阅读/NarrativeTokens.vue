@@ -6,13 +6,22 @@
         v-if="annotations"
         class="term"
         :aria-label="`${token.text}：查看注释`"
-        @click="$emit('term', token.text)"
-        @mouseenter="$emit('term', token.text)"
+        @click="openTerm(token, $event)"
+        @mouseenter="openTerm(token, $event)"
+        @focus="openTerm(token, $event)"
       >
         {{ token.text }}
       </button>
       <template v-else>{{ token.text }}</template>
     </template>
+    <span v-else-if="token.kind === 'quote'" class="dialogue-single"
+      >「<NarrativeTokens
+        :tokens="token.children"
+        :mode="mode"
+        :annotations="annotations"
+        @term="$emit('term', $event)"
+      />」</span
+    >
     <span
       v-else
       class="dialogue"
@@ -30,5 +39,8 @@
 <script setup lang="ts">
 import type { Token } from './text';
 defineProps<{ tokens: Token[]; mode: 'zh' | 'ja' | 'only'; annotations: boolean }>();
-defineEmits<{ term: [term: string] }>();
+const emit = defineEmits<{ term: [value: { term: string; note: string; anchor: HTMLElement }] }>();
+function openTerm(token: Extract<Token, { kind: 'term' }>, event: Event) {
+  emit('term', { term: token.text, note: token.note, anchor: event.currentTarget as HTMLElement });
+}
 </script>

@@ -10,6 +10,7 @@ export const Preferences = z.object({
   annotations: z.boolean().catch(true),
   secretName: z.boolean().catch(false),
   avatar: z.string().catch(''),
+  dialogueColors: z.record(z.string(), z.string().regex(/^#[0-9a-fA-F]{6}$/)).catch({}),
 });
 export type Preferences = z.infer<typeof Preferences>;
 const key = 'hujiuxi_reader_preferences_v2';
@@ -22,14 +23,27 @@ export const usePreferences = defineStore('hujiuxi.preferences', () => {
   let queue = Promise.resolve();
   function patch(value: Partial<Preferences>) {
     const changes = klona(value);
-    settings.value = Preferences.parse({ ...settings.value, ...changes });
+    settings.value = Preferences.parse({
+      ...settings.value,
+      ...changes,
+      dialogueColors: { ...settings.value.dialogueColors, ...changes.dialogueColors },
+    });
     pending++;
     queue = queue
       .then(async () => {
         await updateVariablesWith(
           variables => ({
             ...variables,
-            [key]: klona(Preferences.parse({ ...Preferences.parse(variables[key] ?? {}), ...changes })),
+            [key]: klona(
+              Preferences.parse({
+                ...Preferences.parse(variables[key] ?? {}),
+                ...changes,
+                dialogueColors: {
+                  ...Preferences.parse(variables[key] ?? {}).dialogueColors,
+                  ...changes.dialogueColors,
+                },
+              }),
+            ),
           }),
           { type: 'global' },
         );

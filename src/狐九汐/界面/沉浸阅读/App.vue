@@ -1,19 +1,20 @@
 <template>
   <main
+    ref="readerRoot"
     class="reader"
     :class="themeClasses[prefs.settings.theme]"
-    :style="{ '--reader-size': `${prefs.settings.fontSize}px` }"
+    :style="{ '--reader-size': `${prefs.settings.fontSize}px`, '--dialogue-color': dialogueColor }"
     @keydown.esc="closePanels"
   >
     <header class="masthead">
-      <div class="seal" aria-hidden="true">佐<br />助</div>
+      <div class="seal" aria-hidden="true">镰<br />仓</div>
       <div class="masthead-copy">
-        <p class="eyebrow">KAMAKURA · A LETTER TO YOU</p>
-        <h1>雨下书简</h1>
+        <h1>{{ calendar.title }}</h1>
         <p class="subtitle">
-          佐助稻荷 · {{ store.data.世界.日期 }} <span>{{ store.data.世界.时间 }}</span>
+          {{ calendar.header }}
         </p>
       </div>
+      <button class="gazetteer-button text-button" :aria-expanded="drawer" @click="drawer = !drawer">风物志</button>
       <button
         class="menu-button"
         :aria-expanded="settingsOpen"
@@ -60,6 +61,14 @@
           </button>
         </div>
       </fieldset>
+      <label class="dialogue-color-control"
+        >本主题对话颜色<input
+          aria-label="本主题对话颜色"
+          type="color"
+          :value="dialogueColor"
+          @input="changeDialogueColor"
+        /><button class="text-button" @click="resetDialogueColor">恢复原色</button></label
+      >
       <label class="font-control"
         >正文字号 <output>{{ prefs.settings.fontSize }} px</output
         ><input
@@ -78,9 +87,12 @@
           :disabled="annotationBusy"
           @click="toggleAnnotations"
         >
-          文化注解 · {{ prefs.settings.annotations ? '开' : '关' }}</button
-        ><button class="text-button" @click="drawer = !drawer">镰仓 · 风物志</button>
+          文化注解 · {{ prefs.settings.annotations ? '开' : '关' }}
+        </button>
       </div>
+      <p class="annotation-explainer">
+        开启后，正文中的文化词汇会带有细点下划线。鼠标悬停或轻点词语，就能展开风物笺解说；出现过的词汇收进「风物志」。开关也会联动世界书「文化注解」，影响后续回复是否添加注解。关闭后只显示原词，已有词汇仍可在风物志查阅。
+      </p>
       <label class="avatar-setting"
         >头像图片地址<input type="url" placeholder="https://…" :value="prefs.settings.avatar" @change="changeAvatar"
       /></label>
@@ -101,13 +113,6 @@
     </section>
 
     <section class="story" aria-label="故事正文">
-      <svg class="thread-border" viewBox="0 0 800 1000" preserveAspectRatio="none" aria-hidden="true">
-        <path
-          d="M400 10 H774 Q790 10 790 26 V974 Q790 990 774 990 H26 Q10 990 10 974 V26 Q10 10 26 10 H400"
-          pathLength="100"
-          :stroke-dasharray="`${bondProgress * 100} 100`"
-        />
-      </svg>
       <div class="season-heading">
         <span>{{ currentTheme.label }}</span
         ><span class="chapter-mark">一 期 一 会</span>
@@ -177,23 +182,7 @@
           />
         </p>
       </div>
-      <aside v-if="activeTerm && prefs.settings.annotations" class="term-note" role="note">
-        <button class="text-button" aria-label="关闭注释" @click="activeTerm = ''">合上</button
-        ><strong>{{ activeTerm }}</strong>
-        <p>{{ glossary.find(item => item.term === activeTerm)?.note }}</p>
-      </aside>
-      <footer class="story-footer">
-        <div class="knot" role="img" :aria-label="bondCaption">
-          <svg viewBox="0 0 320 112" aria-hidden="true">
-            <path class="knot-ghost" :d="knotPath" />
-            <path :d="knotPath" pathLength="100" :stroke-dasharray="`${bondProgress * 100} 100`" />
-            <circle v-if="bondProgress > 0.3" cx="160" cy="56" r="3" />
-            <path v-if="bondProgress > 0.7" class="knot-tail" d="M151 70l-5 29 M169 70l5 29 M142 98h8 M170 98h8" />
-          </svg>
-        </div>
-        <p>{{ bondCaption }}</p>
-        <span>縁は、静かに結ばれてゆく。</span>
-      </footer>
+      <footer class="story-footer"><span>此间一页，留待来日重读。</span></footer>
     </section>
 
     <section class="afterword" aria-label="读后札记">
@@ -204,7 +193,21 @@
       </div>
       <p v-if="!store.ready" class="hint">{{ store.error || '正等待本楼状态落笔，正文可先阅读。' }}</p>
       <div class="status-grid">
-        <article class="character-card panel">
+        <article
+          ref="characterRoot"
+          class="character-card panel"
+          :class="{
+            'bond-petals': bondProgress >= 0.2,
+            'bond-lanterns': bondProgress >= 0.5,
+            'bond-starlight': bondProgress >= 0.8,
+          }"
+        >
+          <svg class="character-thread" :viewBox="`0 0 ${cardWidth} ${cardHeight}`" aria-hidden="true">
+            <path :d="characterThread" pathLength="100" :stroke-dasharray="`${bondProgress * 100} 100`" />
+          </svg>
+          <span v-if="bondProgress >= 0.2" class="bond-petal" aria-hidden="true"></span>
+          <span v-if="bondProgress >= 0.5" class="bond-lantern" aria-hidden="true">縁</span>
+          <span v-if="bondProgress >= 0.8" class="bond-star" aria-hidden="true"></span>
           <div class="character-heading">
             <button class="avatar" aria-label="人物头像" @click="tapAvatar">
               <img v-if="avatarUrl && !avatarFailed" :src="avatarUrl" alt="汐的头像" @error="avatarFailed = true" /><svg
@@ -226,34 +229,77 @@
             <span class="mood">{{ store.data.狐九汐.心情 }}</span>
           </div>
           <blockquote>{{ store.data.狐九汐.心声 }}</blockquote>
-          <details class="outfit">
-            <summary>衣上时光</summary>
+          <section class="attire">
+            <div class="attire-heading">
+              <span>衣</span>
+              <h3>衣上时光</h3>
+              <i></i>
+            </div>
             <p>{{ store.data.狐九汐.着装 }}</p>
-          </details>
+          </section>
+          <nav v-if="bondProgress >= 0.2" class="bond-menu" aria-label="缘结小笺">
+            <button :aria-expanded="bondPanel === 'letter'" @click="bondPanel = bondPanel === 'letter' ? '' : 'letter'">
+              花间笺
+            </button>
+            <button
+              v-if="bondProgress >= 0.5"
+              :aria-expanded="bondPanel === 'lamp'"
+              @click="bondPanel = bondPanel === 'lamp' ? '' : 'lamp'"
+            >
+              灯下语
+            </button>
+            <button
+              v-if="bondProgress >= 0.8"
+              :aria-expanded="bondPanel === 'wish'"
+              @click="bondPanel = bondPanel === 'wish' ? '' : 'wish'"
+            >
+              月下寄愿
+            </button>
+          </nav>
+          <section v-if="bondPanel" class="bond-note">
+            <template v-if="bondPanel === 'letter'"
+              ><h3>花间笺</h3>
+              <p>{{ bondCaption }}</p></template
+            >
+            <template v-else-if="bondPanel === 'lamp'"
+              ><h3>灯下语</h3>
+              <p>{{ store.data.狐九汐.心声 }}</p>
+              <small>把此刻没有说出口的话，留在灯下。</small></template
+            >
+            <template v-else
+              ><h3>月下寄愿</h3>
+              <label
+                >写给自己的小小心愿<textarea
+                  v-model="wishDraft"
+                  rows="3"
+                  maxlength="500"
+                  placeholder="愿下一次相见……"
+                /></label
+              ><button class="text-button" @click="saveWish">系在红线上</button
+              ><small role="status">{{
+                wishSaved ? '心愿已收好。' : '只存作你的私笺，不会发送给角色。'
+              }}</small></template
+            >
+          </section>
         </article>
         <article class="world-card panel">
           <div class="section-title">
             <h2>境内札记</h2>
-            <span class="date-seal">{{ store.data.世界.曜日 }} 曜</span>
+            <span class="date-seal">{{ calendar.japanese }}</span>
           </div>
           <dl>
-            <div>
-              <dt>所在</dt>
-              <dd>镰仓 · 佐助稻荷神社</dd>
-            </div>
-            <div>
-              <dt>时刻</dt>
-              <dd>{{ store.data.世界.时间 }}</dd>
-            </div>
             <div>
               <dt>小钱袋</dt>
               <dd>{{ store.data.狐九汐.小钱袋.toLocaleString() }} <small>円</small></dd>
             </div>
           </dl>
-          <details v-if="store.data.狐九汐.购物日志.length" class="shopping">
-            <summary>小小购记</summary>
-            <p v-for="(log, index) in store.data.狐九汐.购物日志" :key="index">{{ log }}</p>
-          </details>
+          <section class="shopping-log">
+            <h3>小小购记</h3>
+            <p v-if="!store.data.狐九汐.购物日志.length" class="hint">钱袋还安静着，今天尚无购记。</p>
+            <ol v-else>
+              <li v-for="(log, index) in store.data.狐九汐.购物日志" :key="index">{{ log }}</li>
+            </ol>
+          </section>
         </article>
       </div>
     </section>
@@ -267,32 +313,68 @@
         <span class="hint">一纸寄语，且听风吟</span>
       </div>
       <p v-if="!fortunes.length" class="no-fortune">签纸尚白。待故事里求得一签，再将它收在这里。</p>
-      <div class="fortune-grid">
-        <article v-for="[owner, fortune] in fortunes" :key="owner" class="fortune-paper">
-          <header>
-            <span>{{ owner }}</span
-            ><small>{{ fortune.番号 }}</small>
-          </header>
-          <p class="fortune-heading">佐 助 稲 荷</p>
-          <h3>{{ fortune.运势 || '待解' }}</h3>
-          <p class="verse">{{ fortune.寄语 }}</p>
-          <p class="interpretation">{{ fortune.解签 }}</p>
+      <div v-if="fortunes.length" class="fortune-tabs" role="tablist" aria-label="选择御神签">
+        <button
+          v-for="[owner] in fortunes"
+          :key="owner"
+          role="tab"
+          :aria-selected="fortuneOwner === owner"
+          aria-controls="fortune-sheet"
+          @click="fortuneOwner = owner"
+        >
+          {{ owner }}<span>展开签纸</span>
+        </button>
+      </div>
+      <article
+        v-if="selectedFortune"
+        id="fortune-sheet"
+        class="fortune-paper refined-fortune"
+        role="tabpanel"
+        :aria-label="`${fortuneOwner}的御神签`"
+      >
+        <button class="text-button fold-fortune" @click="fortuneOwner = ''">收签</button>
+        <div class="fortune-rails" aria-hidden="true">奉 拝<br />開 運</div>
+        <div class="fortune-center">
+          <p class="fortune-heading">相 州 鎌 倉 · 佐 助 稲 荷</p>
+          <p class="fortune-owner">{{ fortuneOwner }} 様</p>
+          <h3>{{ selectedFortune.运势 || '待解' }}</h3>
+          <small class="fortune-number">第 {{ selectedFortune.番号 || '未记' }} 号</small>
+          <p class="verse">{{ selectedFortune.寄语 }}</p>
+          <p class="interpretation">{{ selectedFortune.解签 }}</p>
           <dl>
-            <div v-for="(value, label) in fortune.个别运势" :key="label">
+            <div v-for="(value, label) in selectedFortune.个别运势" :key="label">
               <dt>{{ label }}</dt>
               <dd>{{ value || '—' }}</dd>
             </div>
           </dl>
           <footer>心 願 成 就</footer>
-        </article>
-      </div>
+        </div>
+      </article>
     </section>
+    <aside
+      v-if="activeTerm && prefs.settings.annotations"
+      ref="termCard"
+      class="term-note anchored-note"
+      :style="termPosition"
+      role="note"
+      aria-live="polite"
+      aria-label="风物笺注解"
+    >
+      <div class="note-caption">
+        鎌倉 · 風物箋<button class="text-button" aria-label="关闭注释" @click="closeTerm">合上</button>
+      </div>
+      <h3>{{ activeTerm.term }}</h3>
+      <p>{{ activeTerm.note }}</p>
+      <span class="note-stamp" aria-hidden="true">知</span>
+    </aside>
     <footer class="colophon">鎌 倉 <span>／</span> 此刻的风，留在纸上。</footer>
   </main>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useElementSize } from '@vueuse/core';
+import { calendarLabels } from './calendar';
 import { useDataStore } from './store';
 import { usePreferences, type Preferences } from './settings';
 import { collectTerms, extractStory, tokenize } from './text';
@@ -304,7 +386,60 @@ const prefs = usePreferences();
 const settingsOpen = ref(false);
 const drawer = ref(false);
 const story = ref('');
-const activeTerm = ref('');
+const readerRoot = ref<HTMLElement>();
+const characterRoot = ref<HTMLElement>();
+const termCard = ref<HTMLElement>();
+const activeTerm = ref<{ term: string; note: string; anchor: HTMLElement } | null>(null);
+const termPosition = ref<Record<string, string>>({});
+const { width: cardWidth, height: cardHeight } = useElementSize(
+  characterRoot,
+  { width: 320, height: 500 },
+  { box: 'border-box' },
+);
+const characterThread = computed(() => {
+  const w = cardWidth.value,
+    h = cardHeight.value,
+    x = w - 9,
+    y = h - 9;
+  return `M ${w / 2} 9 C ${w * 0.7} 24 ${w * 0.77} -3 ${x - 12} 13 Q ${x} 14 ${x} 33 C ${x - 14} ${h * 0.28} ${x + 5} ${h * 0.37} ${x} ${h * 0.52} S ${x - 12} ${h * 0.78} ${x} ${y - 19} Q ${x} ${y} ${x - 22} ${y} C ${w * 0.69} ${y - 12} ${w * 0.46} ${y + 6} 32 ${y} Q 9 ${y} 9 ${y - 22} C 22 ${h * 0.7} 1 ${h * 0.52} 9 ${h * 0.4} S 24 ${h * 0.15} 9 33 Q 9 9 31 9 C ${w * 0.3} 22 ${w * 0.39} 3 ${w / 2} 9`;
+});
+const calendar = computed(() => calendarLabels(store.data.世界.日期, store.data.世界.曜日, store.data.世界.时间));
+const fortuneOwner = ref('');
+const selectedFortune = computed(() => store.data.御神签[fortuneOwner.value]);
+const bondPanel = ref('');
+const wishDraft = ref(getVariables({ type: 'chat' }).hujiuxi_private_wish ?? '');
+const wishSaved = ref(false);
+async function saveWish() {
+  await updateVariablesWith(v => ({ ...v, hujiuxi_private_wish: wishDraft.value }), { type: 'chat' });
+  wishSaved.value = true;
+}
+watch(wishDraft, () => {
+  wishSaved.value = false;
+});
+const defaultColors = {
+  spring: '#aa6277',
+  summer: '#747ba2',
+  autumn: '#b0673e',
+  winter: '#638595',
+  sunset: '#b56d53',
+  night: '#cfb48b',
+};
+const dialogueColor = computed(
+  () => prefs.settings.dialogueColors[prefs.settings.theme] ?? defaultColors[prefs.settings.theme],
+);
+function changeDialogueColor(event: Event) {
+  prefs.patch({
+    dialogueColors: {
+      [prefs.settings.theme]: (event.target as HTMLInputElement).value,
+    },
+  });
+}
+function resetDialogueColor() {
+  prefs.patch({
+    dialogueColors: { [prefs.settings.theme]: defaultColors[prefs.settings.theme] },
+  });
+}
+
 const notice = ref('');
 const annotationBusy = ref(false);
 const avatarFailed = ref(false);
@@ -368,8 +503,6 @@ const bondCaption = computed(() =>
           ? '千回百转，渐渐结成一个温柔的名字。'
           : '红线绕成花，故事仍在往后生长。',
 );
-const knotPath =
-  'M8 84 C50 84 72 28 118 28 C153 28 199 82 221 60 C242 39 207 5 187 22 C170 39 201 86 228 79 C252 73 238 42 212 38 C168 30 129 98 100 76 C75 57 107 9 132 25 C156 42 128 85 111 62 C92 38 137 11 160 37 C184 64 145 99 135 72 C125 45 178 15 192 41 C209 74 242 88 312 84';
 let avatarTaps = 0;
 let lastTap = 0;
 function tapAvatar() {
@@ -390,11 +523,30 @@ function changeAvatar(event: Event) {
 function closePanels() {
   settingsOpen.value = false;
   drawer.value = false;
-  activeTerm.value = '';
+  activeTerm.value = null;
 }
-function showTerm(term: string) {
-  activeTerm.value = term;
+function positionTerm() {
+  if (!activeTerm.value || !readerRoot.value) return;
+  const anchor = activeTerm.value.anchor.getBoundingClientRect();
+  const root = readerRoot.value.getBoundingClientRect();
+  const width = Math.min(300, root.width - 24);
+  const left = Math.max(12, Math.min(anchor.left - root.left, root.width - width - 12));
+  termPosition.value = { left: `${left}px`, top: `${anchor.bottom - root.top + 9}px`, width: `${width}px` };
 }
+function showTerm(value: { term: string; note: string; anchor: HTMLElement }) {
+  activeTerm.value = value;
+  nextTick(positionTerm);
+}
+function closeTerm() {
+  activeTerm.value = null;
+}
+function outsideTerm(event: Event) {
+  if (!(event.target as Element).closest('.term, .term-note')) closeTerm();
+}
+watch(() => [prefs.settings.theme, prefs.settings.fontSize, prefs.settings.bilingual], closeTerm);
+watch(bondProgress, () => {
+  bondPanel.value = '';
+});
 function refreshStory() {
   story.value = extractStory(getChatMessages(getCurrentMessageId())[0]?.message ?? '');
 }
@@ -415,7 +567,7 @@ async function toggleAnnotations() {
     }
     if (!found) notice.value = '未找到绑定世界书的「文化注解」条目，仅切换正文注解。';
     prefs.patch({ annotations: enabled });
-    if (!enabled) activeTerm.value = '';
+    if (!enabled) activeTerm.value = null;
   } catch (error) {
     notice.value = '注解切换未保存，请稍后重试。';
     console.warn('[狐九汐] 注解同步失败', error);
@@ -426,6 +578,8 @@ async function toggleAnnotations() {
 const listeners: EventOnReturn[] = [];
 onMounted(() => {
   refreshStory();
+  document.addEventListener('pointerdown', outsideTerm);
+  window.addEventListener('resize', positionTerm);
   [
     tavern_events.MESSAGE_UPDATED,
     tavern_events.MESSAGE_RECEIVED,
@@ -433,5 +587,9 @@ onMounted(() => {
     tavern_events.MESSAGE_SWIPED,
   ].forEach(event => listeners.push(eventOn(event, refreshStory)));
 });
-onUnmounted(() => listeners.forEach(l => l.stop()));
+onUnmounted(() => {
+  listeners.forEach(l => l.stop());
+  document.removeEventListener('pointerdown', outsideTerm);
+  window.removeEventListener('resize', positionTerm);
+});
 </script>
