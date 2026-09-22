@@ -26,91 +26,95 @@
       </button>
     </header>
 
-    <section v-if="settingsOpen" id="reader-settings" class="settings panel" aria-label="阅读设置">
-      <div class="section-title">
-        <h2>读一封信的方式</h2>
-        <button class="text-button" @click="settingsOpen = false">收起</button>
-      </div>
-      <fieldset>
-        <legend>时节与光</legend>
-        <div class="theme-grid">
-          <button
-            v-for="item in themes"
-            :key="item.id"
-            :class="['theme-choice', swatchClasses[item.id], { selected: prefs.settings.theme === item.id }]"
-            :aria-pressed="prefs.settings.theme === item.id"
-            @click="prefs.patch({ theme: item.id })"
-          >
-            <span>{{ item.short }}</span
-            ><b>{{ item.label }}</b
-            ><small>{{ item.note }}</small>
-          </button>
+    <PaperReveal kind="panel">
+      <section v-if="settingsOpen" id="reader-settings" class="settings panel" aria-label="阅读设置">
+        <div class="section-title">
+          <h2>读一封信的方式</h2>
+          <button class="text-button" @click="settingsOpen = false">收起</button>
         </div>
-      </fieldset>
-      <fieldset>
-        <legend>双语阅读</legend>
-        <div class="segmented">
-          <button
-            v-for="mode in modes"
-            :key="mode.id"
-            :aria-pressed="prefs.settings.bilingual === mode.id"
-            :class="{ selected: prefs.settings.bilingual === mode.id }"
-            @click="prefs.patch({ bilingual: mode.id })"
-          >
-            {{ mode.label }}
-          </button>
-        </div>
-      </fieldset>
-      <label class="dialogue-color-control"
-        >本主题对话颜色<input
-          aria-label="本主题对话颜色"
-          type="color"
-          :value="dialogueColor"
-          @input="changeDialogueColor"
-        /><button class="text-button" @click="resetDialogueColor">恢复原色</button></label
-      >
-      <label class="font-control"
-        >正文字号 <output>{{ prefs.settings.fontSize }} px</output
-        ><input
-          aria-label="正文字号"
-          type="range"
-          min="13"
-          max="26"
-          step="0.5"
-          :value="prefs.settings.fontSize"
-          @input="changeFont"
-      /></label>
-      <div class="settings-bottom">
-        <button
-          class="text-button"
-          :aria-pressed="prefs.settings.annotations"
-          :disabled="annotationBusy"
-          @click="toggleAnnotations"
+        <fieldset>
+          <legend>时节与光</legend>
+          <div class="theme-grid">
+            <button
+              v-for="item in themes"
+              :key="item.id"
+              :class="['theme-choice', swatchClasses[item.id], { selected: prefs.settings.theme === item.id }]"
+              :aria-pressed="prefs.settings.theme === item.id"
+              @click="prefs.patch({ theme: item.id })"
+            >
+              <span>{{ item.short }}</span
+              ><b>{{ item.label }}</b
+              ><small>{{ item.note }}</small>
+            </button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>双语阅读</legend>
+          <div class="segmented">
+            <button
+              v-for="mode in modes"
+              :key="mode.id"
+              :aria-pressed="prefs.settings.bilingual === mode.id"
+              :class="{ selected: prefs.settings.bilingual === mode.id }"
+              @click="prefs.patch({ bilingual: mode.id })"
+            >
+              {{ mode.label }}
+            </button>
+          </div>
+        </fieldset>
+        <label class="dialogue-color-control"
+          >本主题对话颜色<input
+            aria-label="本主题对话颜色"
+            type="color"
+            :value="dialogueColor"
+            @input="changeDialogueColor"
+          /><button class="text-button" @click="resetDialogueColor">恢复原色</button></label
         >
-          文化注解 · {{ prefs.settings.annotations ? '开' : '关' }}
-        </button>
-      </div>
-      <p class="annotation-explainer">
-        开启后，正文中的文化词汇会带有细点下划线。鼠标悬停或轻点词语，就能展开风物笺解说；出现过的词汇收进「风物志」。开关也会联动世界书「文化注解」，影响后续回复是否添加注解。关闭后只显示原词，已有词汇仍可在风物志查阅。
-      </p>
-      <label class="avatar-setting"
-        >头像图片地址<input type="url" placeholder="https://…" :value="prefs.settings.avatar" @change="changeAvatar"
-      /></label>
-      <p class="hint">阅读偏好自动留存，下一封书简沿用。</p>
-      <p v-if="notice || prefs.saveError" role="status" class="notice">{{ notice || prefs.saveError }}</p>
-    </section>
+        <label class="font-control"
+          >正文字号 <output>{{ prefs.settings.fontSize }} px</output
+          ><input
+            aria-label="正文字号"
+            type="range"
+            min="13"
+            max="26"
+            step="0.5"
+            :value="prefs.settings.fontSize"
+            @input="changeFont"
+        /></label>
+        <div class="settings-bottom">
+          <button
+            class="text-button"
+            :aria-pressed="prefs.settings.annotations"
+            :disabled="annotationBusy"
+            @click="toggleAnnotations"
+          >
+            文化注解 · {{ prefs.settings.annotations ? '开' : '关' }}
+          </button>
+        </div>
+        <p class="annotation-explainer">
+          开启后，正文中的文化词汇会带有细点下划线。鼠标悬停词语可展开风物笺，移开自动收起；手机轻点词语查看，再点任意处收起。出现过的词汇收进「风物志」。开关也会联动世界书「文化注解」，影响后续回复是否添加注解。关闭后只显示原词，已有词汇仍可在风物志查阅。
+        </p>
+        <label class="avatar-setting"
+          >头像图片地址<input type="url" placeholder="https://…" :value="prefs.settings.avatar" @change="changeAvatar"
+        /></label>
+        <p class="hint">阅读偏好自动留存，下一封书简沿用。</p>
+        <p v-if="notice || prefs.saveError" role="status" class="notice">{{ notice || prefs.saveError }}</p>
+      </section>
+    </PaperReveal>
 
-    <section v-if="drawer" class="glossary panel" aria-label="镰仓风物志">
-      <div class="section-title">
-        <h2>镰仓 · 风物志</h2>
-        <button class="text-button" @click="drawer = false">合上</button>
-      </div>
-      <p v-if="!glossary.length" class="hint">风物尚未入册，且慢慢读。</p>
-      <article v-for="item in glossary" :key="item.term">
-        <h3>{{ item.term }}</h3>
-        <p>{{ item.note }}</p>
-      </article>
-    </section>
+    <PaperReveal kind="panel">
+      <section v-if="drawer" class="glossary panel" aria-label="镰仓风物志">
+        <div class="section-title">
+          <h2>镰仓 · 风物志</h2>
+          <button class="text-button" @click="drawer = false">合上</button>
+        </div>
+        <p v-if="!glossary.length" class="hint">风物尚未入册，且慢慢读。</p>
+        <article v-for="item in glossary" :key="item.term">
+          <h3>{{ item.term }}</h3>
+          <p>{{ item.note }}</p>
+        </article>
+      </section>
+    </PaperReveal>
 
     <section class="story" aria-label="故事正文">
       <div class="season-heading">
@@ -179,6 +183,7 @@
             :mode="prefs.settings.bilingual"
             :annotations="prefs.settings.annotations"
             @term="showTerm"
+            @term-leave="termInteraction.leave"
           />
         </p>
       </div>
@@ -187,7 +192,6 @@
 
     <section class="afterword" aria-label="读后札记">
       <div class="section-title afterword-title">
-        <span class="eyebrow">AFTER THE LETTER</span>
         <h2>书简之外</h2>
         <i></i>
       </div>
@@ -222,7 +226,6 @@
               </svg>
             </button>
             <div>
-              <p class="eyebrow">SASUKE INARI</p>
               <h2 class="character-name">{{ prefs.settings.secretName ? '狐九汐' : '九条汐' }}</h2>
               <small>今日的她 · 助勤巫女</small>
             </div>
@@ -256,31 +259,33 @@
               月下寄愿
             </button>
           </nav>
-          <section v-if="bondPanel" class="bond-note">
-            <template v-if="bondPanel === 'letter'"
-              ><h3>花间笺</h3>
-              <p>{{ bondCaption }}</p></template
-            >
-            <template v-else-if="bondPanel === 'lamp'"
-              ><h3>灯下语</h3>
-              <p>{{ store.data.狐九汐.心声 }}</p>
-              <small>把此刻没有说出口的话，留在灯下。</small></template
-            >
-            <template v-else
-              ><h3>月下寄愿</h3>
-              <label
-                >写给自己的小小心愿<textarea
-                  v-model="wishDraft"
-                  rows="3"
-                  maxlength="500"
-                  placeholder="愿下一次相见……"
-                /></label
-              ><button class="text-button" @click="saveWish">系在红线上</button
-              ><small role="status">{{
-                wishSaved ? '心愿已收好。' : '只存作你的私笺，不会发送给角色。'
-              }}</small></template
-            >
-          </section>
+          <PaperReveal>
+            <section v-if="bondPanel" class="bond-note">
+              <template v-if="bondPanel === 'letter'"
+                ><h3>花间笺</h3>
+                <p>{{ bondCaption }}</p></template
+              >
+              <template v-else-if="bondPanel === 'lamp'"
+                ><h3>灯下语</h3>
+                <p>{{ store.data.狐九汐.心声 }}</p>
+                <small>把此刻没有说出口的话，留在灯下。</small></template
+              >
+              <template v-else
+                ><h3>月下寄愿</h3>
+                <label
+                  >写给自己的小小心愿<textarea
+                    v-model="wishDraft"
+                    rows="3"
+                    maxlength="500"
+                    placeholder="愿下一次相见……"
+                  /></label
+                ><button class="text-button" @click="saveWish">系在红线上</button
+                ><small role="status">{{
+                  wishSaved ? '心愿已收好。' : '只存作你的私笺，不会发送给角色。'
+                }}</small></template
+              >
+            </section>
+          </PaperReveal>
         </article>
         <article class="world-card panel">
           <div class="section-title">
@@ -307,7 +312,6 @@
     <section class="omikuji" aria-label="御神签">
       <div class="section-title">
         <div>
-          <p class="eyebrow">A WISH ON PAPER</p>
           <h2>御神签</h2>
         </div>
         <span class="hint">一纸寄语，且听风吟</span>
@@ -325,48 +329,56 @@
           {{ owner }}<span>展开签纸</span>
         </button>
       </div>
-      <article
-        v-if="selectedFortune"
-        id="fortune-sheet"
-        class="fortune-paper refined-fortune"
-        role="tabpanel"
-        :aria-label="`${fortuneOwner}的御神签`"
-      >
-        <button class="text-button fold-fortune" @click="fortuneOwner = ''">收签</button>
-        <div class="fortune-rails" aria-hidden="true">奉 拝<br />開 運</div>
-        <div class="fortune-center">
-          <p class="fortune-heading">相 州 鎌 倉 · 佐 助 稲 荷</p>
-          <p class="fortune-owner">{{ fortuneOwner }} 様</p>
-          <h3>{{ selectedFortune.运势 || '待解' }}</h3>
-          <small class="fortune-number">第 {{ selectedFortune.番号 || '未记' }} 号</small>
-          <p class="verse">{{ selectedFortune.寄语 }}</p>
-          <p class="interpretation">{{ selectedFortune.解签 }}</p>
-          <dl>
-            <div v-for="(value, label) in selectedFortune.个别运势" :key="label">
-              <dt>{{ label }}</dt>
-              <dd>{{ value || '—' }}</dd>
-            </div>
-          </dl>
-          <footer>心 願 成 就</footer>
-        </div>
-      </article>
+      <PaperReveal>
+        <article
+          v-if="selectedFortune"
+          id="fortune-sheet"
+          :key="fortuneOwner"
+          class="fortune-paper refined-fortune"
+          role="tabpanel"
+          :aria-label="`${fortuneOwner}的御神签`"
+        >
+          <button class="text-button fold-fortune" @click="fortuneOwner = ''">收签</button>
+          <div class="fortune-rails" aria-hidden="true">奉 拝<br />開 運</div>
+          <div class="fortune-center">
+            <p class="fortune-heading">相 州 鎌 倉 · 佐 助 稲 荷</p>
+            <p class="fortune-owner">{{ fortuneOwner }} 様</p>
+            <h3>{{ selectedFortune.运势 || '待解' }}</h3>
+            <small class="fortune-number">第 {{ selectedFortune.番号 || '未记' }} 号</small>
+            <p class="verse">{{ selectedFortune.寄语 }}</p>
+            <p class="interpretation">{{ selectedFortune.解签 }}</p>
+            <dl>
+              <div v-for="(value, label) in selectedFortune.个别运势" :key="label">
+                <dt>{{ label }}</dt>
+                <dd>{{ value || '—' }}</dd>
+              </div>
+            </dl>
+            <footer>心 願 成 就</footer>
+          </div>
+        </article>
+      </PaperReveal>
     </section>
-    <aside
-      v-if="activeTerm && prefs.settings.annotations"
-      ref="termCard"
-      class="term-note anchored-note"
-      :style="termPosition"
-      role="note"
-      aria-live="polite"
-      aria-label="风物笺注解"
-    >
-      <div class="note-caption">
-        鎌倉 · 風物箋<button class="text-button" aria-label="关闭注释" @click="closeTerm">合上</button>
-      </div>
-      <h3>{{ activeTerm.term }}</h3>
-      <p>{{ activeTerm.note }}</p>
-      <span class="note-stamp" aria-hidden="true">知</span>
-    </aside>
+    <PaperReveal kind="note">
+      <aside
+        v-if="activeTerm && prefs.settings.annotations"
+        ref="termCard"
+        class="anchored-note"
+        :class="{ 'touch-note': activeTerm.source === 'touch' }"
+        :style="termPosition"
+        role="note"
+        aria-live="polite"
+        aria-label="风物笺注解"
+      >
+        <div class="note-caption">
+          鎌倉 · 風物箋<span class="note-dismiss-hint">{{
+            activeTerm.source === 'touch' ? '轻点任意处收起' : '移开即合笺'
+          }}</span>
+        </div>
+        <h3>{{ activeTerm.term }}</h3>
+        <p>{{ activeTerm.note }}</p>
+        <span class="note-stamp" aria-hidden="true">知</span>
+      </aside>
+    </PaperReveal>
     <footer class="colophon">鎌 倉 <span>／</span> 此刻的风，留在纸上。</footer>
   </main>
 </template>
@@ -379,6 +391,9 @@ import { useDataStore } from './store';
 import { usePreferences, type Preferences } from './settings';
 import { collectTerms, extractStory, tokenize } from './text';
 import NarrativeTokens from './NarrativeTokens.vue';
+import PaperReveal from './PaperReveal.vue';
+import { useReaderMotion } from './motion';
+import { createTermInteraction, type TermTrigger } from './term-interaction';
 import './style.scss';
 
 const store = useDataStore();
@@ -389,7 +404,8 @@ const story = ref('');
 const readerRoot = ref<HTMLElement>();
 const characterRoot = ref<HTMLElement>();
 const termCard = ref<HTMLElement>();
-const activeTerm = ref<{ term: string; note: string; anchor: HTMLElement } | null>(null);
+const activeTerm = ref<TermTrigger | null>(null);
+useReaderMotion(readerRoot, () => prefs.settings.theme);
 const termPosition = ref<Record<string, string>>({});
 const { width: cardWidth, height: cardHeight } = useElementSize(
   characterRoot,
@@ -523,7 +539,7 @@ function changeAvatar(event: Event) {
 function closePanels() {
   settingsOpen.value = false;
   drawer.value = false;
-  activeTerm.value = null;
+  closeTerm();
 }
 function positionTerm() {
   if (!activeTerm.value || !readerRoot.value) return;
@@ -533,21 +549,30 @@ function positionTerm() {
   const left = Math.max(12, Math.min(anchor.left - root.left, root.width - width - 12));
   termPosition.value = { left: `${left}px`, top: `${anchor.bottom - root.top + 9}px`, width: `${width}px` };
 }
-function showTerm(value: { term: string; note: string; anchor: HTMLElement }) {
-  activeTerm.value = value;
-  nextTick(positionTerm);
+const termInteraction = createTermInteraction(
+  value => {
+    activeTerm.value = value;
+    nextTick(positionTerm);
+  },
+  () => {
+    activeTerm.value = null;
+  },
+);
+function showTerm(value: TermTrigger) {
+  termInteraction.open(value);
 }
 function closeTerm() {
-  activeTerm.value = null;
+  termInteraction.close();
 }
 function outsideTerm(event: Event) {
-  if (!(event.target as Element).closest('.term, .term-note')) closeTerm();
+  termInteraction.click(event);
 }
 watch(() => [prefs.settings.theme, prefs.settings.fontSize, prefs.settings.bilingual], closeTerm);
 watch(bondProgress, () => {
   bondPanel.value = '';
 });
 function refreshStory() {
+  closeTerm();
   story.value = extractStory(getChatMessages(getCurrentMessageId())[0]?.message ?? '');
 }
 async function toggleAnnotations() {
@@ -567,7 +592,7 @@ async function toggleAnnotations() {
     }
     if (!found) notice.value = '未找到绑定世界书的「文化注解」条目，仅切换正文注解。';
     prefs.patch({ annotations: enabled });
-    if (!enabled) activeTerm.value = null;
+    if (!enabled) closeTerm();
   } catch (error) {
     notice.value = '注解切换未保存，请稍后重试。';
     console.warn('[狐九汐] 注解同步失败', error);
@@ -578,7 +603,9 @@ async function toggleAnnotations() {
 const listeners: EventOnReturn[] = [];
 onMounted(() => {
   refreshStory();
-  document.addEventListener('pointerdown', outsideTerm);
+  document.addEventListener('click', outsideTerm, true);
+  if (window.parent !== window) window.parent.document.addEventListener('click', outsideTerm, true);
+  window.addEventListener('blur', closeTerm);
   window.addEventListener('resize', positionTerm);
   [
     tavern_events.MESSAGE_UPDATED,
@@ -589,7 +616,9 @@ onMounted(() => {
 });
 onUnmounted(() => {
   listeners.forEach(l => l.stop());
-  document.removeEventListener('pointerdown', outsideTerm);
+  document.removeEventListener('click', outsideTerm, true);
+  if (window.parent !== window) window.parent.document.removeEventListener('click', outsideTerm, true);
+  window.removeEventListener('blur', closeTerm);
   window.removeEventListener('resize', positionTerm);
 });
 </script>

@@ -2,6 +2,56 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { extractStory, tokenize, collectTerms } from '../src/狐九汐/界面/沉浸阅读/text.ts';
+import { createTermInteraction } from '../src/狐九汐/界面/沉浸阅读/term-interaction.ts';
+
+function termHarness() {
+  let visible = null;
+  const controller = createTermInteraction(
+    value => {
+      visible = value;
+    },
+    () => {
+      visible = null;
+    },
+  );
+  const term = (source, anchor = {}, event = new Event('click')) => ({
+    term: '绘马',
+    note: '祈愿木牌',
+    source,
+    anchor,
+    event,
+  });
+  return { controller, term, visible: () => visible };
+}
+test('hover and keyboard notes close on leaving their term, without stale leave closing a newer note', () => {
+  const h = termHarness();
+  for (const source of ['hover', 'keyboard']) {
+    const first = h.term(source),
+      second = h.term(source);
+    h.controller.open(first);
+    h.controller.open(second);
+    h.controller.leave(first.anchor);
+    assert.equal(h.visible(), second);
+    h.controller.leave(second.anchor);
+    assert.equal(h.visible(), null);
+  }
+});
+test('touch note survives pointer exit; next tap anywhere closes and cannot reopen during that event', () => {
+  const h = termHarness();
+  const first = h.term('touch');
+  h.controller.open(first);
+  h.controller.leave(first.anchor);
+  assert.equal(h.visible(), first);
+  const dismiss = new Event('click');
+  h.controller.click(dismiss);
+  assert.equal(h.visible(), null);
+  h.controller.open(h.term('touch', first.anchor, dismiss));
+  assert.equal(h.visible(), null);
+  h.controller.open(h.term('touch'));
+  assert.ok(h.visible());
+  h.controller.click(new Event('click'));
+  assert.equal(h.visible(), null);
+});
 
 test('only complete gal blocks enter reading and glossary', () => {
   const input =
